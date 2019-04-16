@@ -1,6 +1,8 @@
 # web_wechat_api
 网页版微信接口调用脚本
 
+项目地址：[<https://github.com/zhengkx/web_wechat_api>](<https://github.com/zhengkx/web_wechat_api>)
+
 ## 主要功能
   * 扫码登录
   * 获取好友列表
@@ -8,7 +10,7 @@
   * 同步消息
   * 发送消息
   * 获取联系人详情信息
-  
+
 ## 使用
 将文件放到到 www 目录，地址输入 `http://localhost/wechat/index.html` 即可扫码，确认登录（*有时候可以需要扫多一次*）
 
