@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+    <p align="center">
+        <img src="" alt="" id="qrcode">
+    </p>
+    <p class="status">
+
+    </p>
+    <input type="hidden" name="Uin" class="Uin">
+    <input type="hidden" name="Sid" class="Sid">
+    <input type="hidden" name="Skey" class="skey">
+    <input type="hidden" name="DeviceID" class="DeviceID">
+    <input type="hidden" name="pass_ticket" class="pass_ticket">
+
+    <!-- <button onclick="init()">初始化</button>
+    <button onclick="sendMessage()">发送消息</button>
+    <button onclick="getList()">获取人员列表 -->
+    </button>
+</body>
+<script src="//upcdn.b0.upaiyun.com/libs/jquery/jquery-2.0.3.min.js"></script>
+<script>
+    $(function() {
+        getQrCode();
+    })
+
+    function getQrCode() {
+        $.get('wx.php', {}, function(res) {
+            $('#qrcode').attr('src', res);
+            checkIsBin();
+        })
+    }
+
+    function checkIsBin() {
+        $.get('wx.php', {
+            'act': 'status'
+        }, function(res) {
+            console.log(res)
+            if (res.status == 1) {
+                // $('.status').html(res.data);
+                getPublicPara(res.data);
+            } else {
+                setTimeout(checkIsBin, 2000);
+            }
+        }, 'json')
+    }
+
+    function getPublicPara(url) {
+        $.get('wx.php', {
+            'act': 'public',
+            'url': url + '&fun=new'
+        }, function(res) {
+            $('.DeviceID').val(res.DeviceID);
+            $('.Uin').val(res.wxuin);
+            $('.skey').val(res.skey);
+            $('.Sid').val(res.wxsid);
+            $('.pass_ticket').val(res.pass_ticket);
+
+            init();
+        }, 'json')
+    }
+
+    function init() {
+        var DeviceID = $('.DeviceID').val(),
+            Uin = $('.Uin').val(),
+            skey = $('.skey').val(),
+            Sid = $('.Sid').val(),
+            pass_ticket = $('.pass_ticket').val();
+
+        $.get('wx.php', {
+            'act': 'init',
+            'Uin': Uin,
+            'skey': skey,
+            'Sid': Sid,
+            'pass_ticket': pass_ticket,
+            'DeviceID': DeviceID
+        }, function(res) {
+            location.href = 'wechat.html';
+        }, 'json')
+    }
+
+    function sendMessage() {
+        $.get('wx.php', {
+            'act': 'send',
+        }, function(res) {
+            console.log(res);
+        }, 'json')
+    }
+
+    function getList() {
+        $.get('wx.php', {
+            'act': 'list',
+        }, function(res) {
+            console.log(res);
+        }, 'json')
+    }
+</script>
+
+</html>

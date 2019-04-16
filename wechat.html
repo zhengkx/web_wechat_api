@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css"
+        integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="./layui/css/layui.css" media="all">
+</head>
+<body>
+    <div class="panel panel-default">
+        <div class="panel-heading">个人信息</div>
+        <div class="panel-body">
+            好友数：<span><code class="memberCount">0</code></span>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">是否有消息</div>
+        <div class="panel-body">
+            <button type="button" name="" id="" class="btn btn-primary" btn-lg btn-block" onclick="init()">监听失败再初始化</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="synccheck()">开始监听消息</button>
+            <button type="button" class="btn btn-success btn-sm" onclick="synccheckCalen()">取消监听消息</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="checkHaveMessage()">同步消息</button>
+            <hr>
+            新消息数(被同步过的消息不算)：<span><code class="newMessage">0</code></span>
+        </div>
+    </div>
+    <div id="demo20"></div>
+    <table class="layui-table">
+        <colgroup>
+            <col width="150">
+            <col width="150">
+            <col width="200">
+            <col>
+        </colgroup>
+        <thead>
+            <tr>
+                <th>昵称</th>
+                <!-- <th>UserName</th> -->
+                <!-- <th>消息</th> -->
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="biuuu_city_list">
+            
+        </tbody>
+    </table>
+
+    <div class="modal fade" tabindex="-1" role="dialog" id="messageModal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">正在给 <code id="toUser"></code></h4>
+                </div>
+                <div class="modal-body">
+                    <textarea id="sendMessage" class="layui-textarea"></textarea>
+                    <input type="hidden" name="" id="toId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="sendDo()">发送</button>
+                </div>
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <!-- Modal -->
+    <div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">详情</h4>
+                </div>
+                <div class="modal-body">
+                    <p class="nickname"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script src="//upcdn.b0.upaiyun.com/libs/jquery/jquery-2.0.3.min.js"></script>
+<!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js"
+    integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+    crossorigin="anonymous"></script>
+<script src="./layui/layui.js" charset="utf-8"></script>
+<script>
+    var inttime = true;
+    $(function () {
+        getList();
+    })
+
+    function sendMessage(fromUser) {
+        // $('#toUser').html(HTMLDecode(name));
+        $('#toId').val(fromUser);
+        $('#messageModal').modal('show');
+    }
+
+    function sendDo() {
+        var fromUser = $('#toId').val();
+        var content = $('#sendMessage').val();
+
+        $.get('wx.php', {
+            'act': 'send',
+            'fromUser': fromUser,
+            'content': content
+        }, function (res) {
+            if (res.MsgID) {
+                layer.msg('发送成功');
+                $('#sendMessage').val('');
+            }
+        }, 'json')
+    }
+
+    function getList() {
+        $.get('wx.php', {
+            'act': 'list',
+        }, function(res) {
+
+            if (res.BaseResponse.Ret == '1101') {
+                location.href = 'main.php';
+            }
+
+            $('.memberCount').text(res.MemberCount)
+
+            memberList(res.MemberList);
+        }, 'json')
+    }
+
+    function memberList(data) {
+        layui.use(['laypage', 'layer'], function () {
+            var laypage = layui.laypage,
+                layer = layui.layer;
+
+            //总页数低于页码总数
+            laypage.render({
+                elem: 'demo20'
+                , limit: 50
+                , count: data.length
+                , jump: function (obj) {
+                    //模拟渲染
+                    document.getElementById('biuuu_city_list').innerHTML = function () {
+                        var arr = []
+                            , thisData = data.concat().splice(obj.curr * obj.limit - obj.limit, obj.limit);
+                        layui.each(thisData, function (index, item) {
+                            arr.push('<tr>')
+                            name = item.NickName.toString();
+                            if (item.RemarkName) {
+                                name = item.RemarkName.toString();
+                            }
+                            arr.push('<td onclick="getDetail(\''+ item.UserName  +'\')">' + name + '</td>');
+                            // arr.push('<td>' + item.UserName + '</td>');
+                            // arr.push('<td>' + item.HeadImgUrl + '</td>');
+                            // arr.push('<td><code id="' + item.UserName +'">0</code></td>');
+                            arr.push('<td><button class="layui-btn layui-btn-normal" onclick="sendMessage(\''+ item.UserName+'\')">发送消息</button></td>');
+                            arr.push('</tr>')
+                        });
+                        return arr.join('');
+                    }();
+                }
+            });
+        });
+    }
+
+    function checkHaveMessage()
+    {
+        $.get('wx.php', {
+            'act': 'sync',
+        }, function (res) {
+            
+            if (res.BaseResponse.Ret == '1101') {
+                location.href = 'main.php';
+            }
+
+            $('.newMessage').html(res.AddMsgCount);
+            // console.log(res.AddMsgList)
+            // if (res.AddMsgList.length > 0) {
+            //     $(res.AddMsgList).each(function (index, item) {
+            //         $num = document.getElementById(item.FromUserName).text();
+            //         console.log($num);
+            //     })
+            // }
+            // console.log(res);
+        }, 'json')
+    }
+
+    function synccheck()
+    {
+        // inttime = setInterval(function() {
+            $.get('wx.php', {
+                'act': 'syncch',
+            }, function (res) {
+                console.log(res);
+                if (res.retcode == 0 && res.selector == 2) {
+                    checkHaveMessage();
+                } else if (res.retcode == 0 && res.selector == 0) {
+                    $('.newMessage').html(0);
+                } else if (res.retcode == 1101) {
+                    layer.msg('没有登录？？？，再初始化试试 ')
+                }
+
+                if (inttime) {
+                    synccheck();
+                }
+            }, 'json')
+        // }, 2000);
+    }
+
+    function synccheckCalen()
+    {
+        inttime = false;
+    }
+
+    function init() {
+        var DeviceID = $('.DeviceID').val(),
+            Uin = $('.Uin').val(),
+            skey = $('.skey').val(),
+            Sid = $('.Sid').val(),
+            pass_ticket = $('.pass_ticket').val();
+
+        $.get('wx.php', {
+            'act': 'init',
+            'Uin': Uin,
+            'skey': skey,
+            'Sid': Sid,
+            'pass_ticket': pass_ticket,
+            'DeviceID': DeviceID
+        }, function(res) {
+            location.href = 'wechat.html';
+        }, 'json')
+    }
+
+    function getDetail(userName)
+    {
+        $.get('wx.php', {
+            'act': 'detail',
+            'userName': userName
+        }, function (res) {
+            console.log(res);
+            if (res.BaseResponse.Ret == 0) {
+                $('.nickname').html(res.ContactList.NickName)
+                $('.RemarkName').html(res.ContactList.RemarkName)
+
+                $('#detailModal').modal('show');
+            }
+        }, 'json')
+    }
+</script>
+</html>
